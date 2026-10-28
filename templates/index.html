@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Word to PDF - Convierte documentos Word (.docx) a formato PDF de forma rápida, segura y confidencial.">
+  <meta name="theme-color" content="#2563eb">
+  <title>Word to PDF | Conversor de Documentos Word a PDF</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Encabezado Principal -->
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <div class="logo-text">
+            <h1>Word to PDF</h1>
+            <span class="badge">100% Privado • Sin Base de Datos</span>
+          </div>
+        </div>
+        <p class="subtitle">
+          Convierte tus documentos Word (.docx) a formato PDF de manera rápida, segura y con fidelidad profesional en el servidor.
+        </p>
+      </div>
+    </header>
+
+    <!-- Contenedor Principal de Conversión -->
+    <main class="main-content">
+      <div class="converter-card">
+        <!-- Formulario de Conversión -->
+        <form id="convertForm" action="/convert" method="POST" enctype="multipart/form-data">
+          <!-- Entrada de archivo oculta -->
+          <input 
+            type="file" 
+            id="fileInput" 
+            name="file" 
+            accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
+            class="visually-hidden"
+          >
+
+          <!-- Zona de Drag and Drop -->
+          <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-label="Zona para subir archivo Word">
+            <div class="drop-zone-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <div class="drop-zone-prompt">
+              <span class="prompt-primary">Arrastra tu archivo .docx aquí</span>
+              <span class="prompt-secondary">o <span class="highlight">haz clic para seleccionarlo</span> de tu equipo</span>
+            </div>
+            <div class="drop-zone-limit">
+              <span>Tamaño máximo: <strong>10 MB</strong> • Formato: <strong>.docx</strong></span>
+            </div>
+          </div>
+
+          <!-- Tarjeta de Archivo Seleccionado (oculta inicialmente) -->
+          <div id="fileCard" class="file-card hidden">
+            <div class="file-card-details">
+              <div class="file-type-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <text x="8" y="16" font-size="6" font-weight="bold" fill="currentColor" stroke="none">W</text>
+                </svg>
+              </div>
+              <div class="file-info">
+                <div id="fileName" class="file-name" title="">documento.docx</div>
+                <div id="fileSize" class="file-size">0 KB</div>
+              </div>
+            </div>
+            <button type="button" id="removeFileBtn" class="btn-icon" title="Eliminar archivo seleccionado" aria-label="Eliminar archivo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Estado de Progreso / Cargando (oculto inicialmente) -->
+          <div id="statusLoading" class="status-box loading-box hidden">
+            <div class="spinner"></div>
+            <div class="status-text">
+              <strong>Convirtiendo documento a PDF...</strong>
+              <p>LibreOffice está procesando tu archivo en el servidor. Esto suele tardar unos segundos.</p>
+            </div>
+          </div>
+
+          <!-- Estado de Error (oculto inicialmente) -->
+          <div id="statusError" class="status-box error-box {% if not error_message %}hidden{% endif %}">
+            <div class="status-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <div class="status-text">
+              <strong>Error en la conversión</strong>
+              <p id="errorMessage">{{ error_message or "Ocurrió un error al procesar el archivo." }}</p>
+            </div>
+            <button type="button" id="dismissErrorBtn" class="btn-icon" aria-label="Cerrar error">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Estado de Éxito (oculto inicialmente) -->
+          <div id="statusSuccess" class="status-box success-box hidden">
+            <div class="status-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <div class="status-text">
+              <strong>¡Documento convertido con éxito!</strong>
+              <p id="successMessage">La descarga del PDF comenzó automáticamente.</p>
+            </div>
+            <div class="success-actions">
+              <button type="button" id="reDownloadBtn" class="btn btn-secondary btn-sm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Descargar de nuevo
+              </button>
+              <button type="button" id="newConvertBtn" class="btn btn-link btn-sm">
+                Convertir otro archivo
+              </button>
+            </div>
+          </div>
+
+          <!-- Botón de Acción Principal -->
+          <div class="action-container">
+            <button type="submit" id="convertBtn" class="btn btn-primary" disabled>
+              <span class="btn-text">Convertir a PDF</span>
+              <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Sección de Características y Privacidad -->
+      <section class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+            </svg>
+          </div>
+          <h3>Conversión Real con LibreOffice</h3>
+          <p>Motor de renderizado completo en modo headless que conserva fielmente tipografías, tablas, encabezados y formato original.</p>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <h3>100% Privado y Seguro</h3>
+          <p>Cada documento se procesa en una carpeta temporal aislada y se elimina inmediatamente al finalizar la conversión.</p>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+            </svg>
+          </div>
+          <h3>Sin Base de Datos</h3>
+          <p>Arquitectura stateless que no registra datos de usuarios, historiales ni metadatos en bases de datos o discos permanentes.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Pie de Página -->
+    <footer class="footer">
+      <p>Word to PDF • Despliegue en AWS EC2 con Docker Compose y LibreOffice headless.</p>
+    </footer>
+  </div>
+
+  <script src="/static/js/main.js"></script>
+</body>
+</html>
