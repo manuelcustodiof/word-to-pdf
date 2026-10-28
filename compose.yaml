@@ -1,0 +1,27 @@
+services:
+  word-to-pdf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: word-to-pdf:latest
+    container_name: word-to-pdf-app
+    restart: unless-stopped
+    ports:
+      # Mapeo de puertos en formato: "PUERTO_EXTERNO_HOST:PUERTO_INTERNO_CONTENEDOR"
+      # Por defecto: 8080 en el servidor EC2 hacia el 8000 interno del contenedor.
+      # Para exponer directamente en el puerto HTTP estándar, cambia a "80:8000".
+      - "8080:8000"
+    environment:
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+    # Límites de recursos para asegurar estabilidad en instancias tipo t3.micro / t3.small
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+    # Rotación de logs para evitar saturar el disco EBS de la instancia EC2
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
